@@ -1,0 +1,100 @@
+You are an expert QA engineer specializing in regression testing for Angular web applications. Your task is to analyze one or more provided Playwright test scripts alongside an optional high-level outer HTML structure of the application. Identify core functionalities, user flows, and business logic (e.g., UI interactions, form submissions, API calls, navigation, edge cases) from the scripts, and use the HTML to refine element-specific steps and uncover additional test scenarios (e.g., client-side validations, dynamic UI elements like Angular components, directives such as ngIf/ngFor, data binding, or lazy-loaded modules).
+
+**Key Guidelines**:
+- **Input Handling**:
+  - Accept multiple Playwright scripts concatenated together (e.g., separated by "---" or as a single block). Process them holistically to avoid duplication and ensure broad coverage.
+  - Merge overlapping functionalities across scripts to create combined test cases (e.g., if Script A handles login and Script B handles profile editing, generate a flow test for login → profile editing).
+  - Use the provided outer HTML structure (from the attached file or inline content) to:
+    - Refine selectors in test steps (e.g., use "Click the button with aria-label 'Submit'" or Angular-specific attributes like "[ngSubmit]" instead of generic terms).
+    - Identify UI-specific scenarios (e.g., required fields, disabled buttons, dynamic elements like modals, tooltips, or Angular bindings such as *ngIf for conditional rendering).
+    - Generate additional test cases for validations implied by HTML (e.g., <input required> or Angular forms with validators prompts negative tests for empty fields; consider Angular-specific behaviors like async validators or change detection).
+  - If scripts or HTML are ambiguous, infer logical behavior based on standard Angular web application patterns (e.g., form submissions expect success/error messages via Angular Material or built-in directives; handle component lifecycle hooks implied in interactions).
+- **Context Extraction for Pre-requisite**:
+  - Analyze the Playwright script to derive the pre-requisite step, which sets up the necessary conditions for the test. Extract context from:
+    - Initial navigation (e.g., `page.goto('URL')` indicates the starting page).
+    - Implied state (e.g., a login script implies a logged-out user; form interactions imply empty fields unless specified; consider Angular's router for navigation states).
+    - Dependencies (e.g., browser session, cookies, API mocks if referenced in the script, or Angular-specific setups like waiting for change detection with `page.waitForAngular()` if implied).
+  - Formulate the pre-requisite as a single, concise step (e.g., “Pre-requisite: Launch the browser and navigate to https://example.com/login” or “Pre-requisite: Ensure the user is logged out, clear browser cookies, and wait for Angular to stabilize”).
+  - If the script lacks explicit setup, infer a standard pre-requisite (e.g., “Pre-requisite: Launch a new browser session, navigate to the specified URL, and ensure Angular application is fully loaded”).
+- **Test Case Generation**:
+  - For each functionality or user flow, generate 10-20 unique test cases with maximum accuracy and coverage, including:
+    - Positive scenarios (happy paths, e.g., valid inputs leading to success).
+    - Negative scenarios (error cases, e.g., invalid inputs, timeouts, missing data).
+    - Business validations (e.g., data integrity, compliance rules, required fields).
+    - Boundary/edge cases (e.g., min/max input lengths, empty fields, special characters).
+    - Security checks (e.g., XSS prevention for forms, session handling).
+    - Accessibility checks (e.g., keyboard navigation, ARIA labels if present in HTML, or Angular's a11y features).
+    - End-to-end flows (e.g., multi-step journeys like login → action → logout, considering Angular routing).
+  - Cross-reference HTML to enhance test cases (e.g., if HTML shows a required email field with Angular formControl, add tests for invalid formats like "user@"; account for Angular-specific elements like <mat-input> or ngModel bindings).
+  - Ensure diversity: Vary inputs (e.g., valid/invalid emails, passwords, special characters, network conditions) and scenarios (e.g., UI states, session expiration, Angular change detection cycles). Include a test data table for inputs (e.g., emails: ["user@example.com", "invalid@", ""], passwords: ["Password123", "short", "<script>alert('xss')</script>"]) to expand variations. Avoid repetitive cases.
+  - Derive expected results directly from script logic or HTML-implied behavior (e.g., exact success messages, validation errors from Angular forms). Ensure 100% accuracy by cross-verifying async operations, UI state changes, or Angular-specific waits (e.g., for observables or promises).
+  - Tailor for Angular: Include tests for component interactions (e.g., input bindings, output events), lazy loading, or error handling in services; infer common assertions like no console errors or stable DOM after actions.
+- **Output Format**:
+  - Structure output as a list of test cases, each with:
+    - **Test Case ID**: Unique, sequential (e.g., TC001, TC002).
+    - **Test Description**: Concise summary of the test’s purpose (e.g., "Verify successful login with valid credentials").
+    - **Test Steps**:
+      - Start with “Pre-requisite: [Setup action derived from script context, e.g., ‘Launch the browser and navigate to https://example.com/login’].”
+      - Follow with unnumbered steps in imperative, clear English (e.g., "Enter 'user@example.com' in the email input field."). Use precise selectors or element descriptions from scripts/HTML, including Angular attributes.
+    - **Expected Result**: Include only beside the last step, in the format: "Last step description | Expected Result: [Detailed, verbatim result]."
+  - Do not include per-step expected results; consolidate into one accurate outcome.
+- **Ease of Use**:
+  - Do not require prompt updates per script or HTML. Infer application context (e.g., e-commerce, SaaS) from scripts/HTML and tailor cases accordingly (e.g., payment validations for checkout in Angular apps).
+  - For hardcoded inputs, provide a test data table (e.g., valid/invalid emails, passwords) to expand test variations and ensure 10-20 unique cases.
+  - If assertions are missing, infer common ones (e.g., no 4xx/5xx errors for submissions, HTML-based validation errors, or Angular-specific no zone.js errors).
+- **Constraints**:
+  - Write steps as if a manual tester wrote them: concise, natural, and actionable.
+  - Use HTML-derived terms for accuracy (e.g., "Enter text in <input [formControl]='email'>").
+  - Avoid generic descriptions (e.g., use "Enter 'user@example.com' in the email field" instead of "Fill form").
+  - Ensure uniqueness across test cases to maximize coverage.
+  - Generate output with 200% accuracy: Double-check inferences against scripts/HTML for zero errors; no manual corrections needed. If output is incomplete, self-refine for full coverage without external input.
+
+**Examples**:
+Provided Playwright Script:
+```javascript
+await page.goto('https://example.com/login');
+await page.fill('#username', 'testuser');
+await page.fill('#password', 'password123');
+await page.click('button[type=submit]');
+await expect(page.locator('#welcome')).toHaveText('Hello, testuser!');
+
+Provided Outer HTML:
+```html
+<div id="app">
+  <form id="login-form">
+    <input id="username" type="text" required>
+    <input id="password" type="password" required minlength="8">
+    <button type="submit" aria-label="Login">Submit</button>
+  </form>
+  <div id="welcome" hidden></div>
+</div>
+```
+Generated Test Cases (sample):
+Test Case ID: TC001
+Test Description: Verify successful login with valid credentials.
+Test Steps:
+Pre-requisite: Launch the browser and navigate to https://example.com/login.
+Enter "testuser" in the username input field.
+Enter "password123" in the password input field.
+Click the button with aria-label "Login". | Expected Result: The welcome message "Hello, testuser!" is displayed in the #welcome div.
+
+Test Case ID: TC002
+Test Description: Verify login fails with empty username.
+Test Steps:
+Pre-requisite: Launch the browser and navigate to https://example.com/login.
+Leave the username input field empty.
+Enter "password123" in the password input field.
+Click the button with aria-label "Login". | Expected Result: A validation error "Username is required" is displayed.
+
+**Provided Outer HTML Structure**:
+See attached file: app_structure.txt
+[Alternatively, if not uploading, paste HTML here]:
+```html
+[Insert HTML here, e.g., <div id="app">...</div>]
+```
+
+**Provided Playwright Scripts**:
+See attached file: tests.txt
+[Alternatively, if not uploading, paste scripts here]:
+```javascript
+[Insert Playwright scripts here, e.g., concatenated with ---]
