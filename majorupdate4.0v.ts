@@ -194,10 +194,11 @@ class MyCustomReporter implements Reporter {
 
     // ===================================================================================
     // ==== START: FIX FOR REPORT SIZE INCREASE ==========================================
+    // This logic is the solution to prevent the report size from growing with each run.
     // ===================================================================================
 
     // Step 1: Read existing history data into memory BEFORE cleaning the directory.
-    // If 'resetHistory' is true, we skip this and start with an empty history.
+    // This preserves the trend data across runs.
     if (!this.options.resetHistory && fs.existsSync(this.historyFilePath)) {
       try {
         this.historyData = JSON.parse(
@@ -212,12 +213,13 @@ class MyCustomReporter implements Reporter {
       }
     }
 
-    // Step 2: Clean the entire output directory to remove all files from the previous run.
+    // Step 2: **CRITICAL STEP** Clean the entire output directory.
+    // This removes the old index.html AND all old attachments, solving the size problem.
     if (fs.existsSync(this.outputDir)) {
       fs.rmSync(this.outputDir, { recursive: true, force: true });
     }
 
-    // Step 3: Recreate the output directory so it's fresh for the new report.
+    // Step 3: Recreate the output directory so it's fresh and empty for the new report.
     fs.mkdirSync(this.outputDir, { recursive: true });
 
     // ===================================================================================
@@ -226,6 +228,7 @@ class MyCustomReporter implements Reporter {
 
     if (!this.options.embedAssets) {
       this.attachmentsDir = path.join(this.outputDir, "attachments");
+      // This will always be true now, but it's safe to keep.
       if (!fs.existsSync(this.attachmentsDir))
         fs.mkdirSync(this.attachmentsDir, { recursive: true });
     }
@@ -468,7 +471,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private getCssContent(): string {
-    // ... CSS content remains exactly the same, it is omitted here for brevity
     return `
       @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600&display=swap');
       :root {
@@ -601,7 +603,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private formatDuration(ms: number): string {
-    // ... this method remains the same ...
     if (ms < 0) ms = 0;
     const totalSeconds = ms / 1000;
     const hours = Math.floor(totalSeconds / 3600);
@@ -627,7 +628,6 @@ class MyCustomReporter implements Reporter {
     groupedTests: GroupedTests,
     cssContent: string
   ): string {
-    // ... this method remains the same ...
     const { total, passed, failed, skipped, flaky: retries } = data.counts;
     const calcPercent = (value: number) =>
       total > 0 ? ((value / total) * 100).toFixed(2) : "0.00";
@@ -1014,7 +1014,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private generateTestCases(groupedTests: GroupedTests): string {
-    // ... this method remains the same ...
     let html = "";
     groupedTests.forEach((tests, groupTitle) => {
       const finalTitle = `PROJECT <span style="color: var(--primary); font-weight: 500;">&gt;</span> ${this.escapeHtml(
@@ -1028,7 +1027,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private highlightError(errorText: string): string {
-    // ... this method remains the same ...
     const escaped = this.escapeHtml(errorText);
     return escaped.replace(
       /(Error:|Locator:|Expected string:|Received:|Call log:|Test timeout of|waiting for)/gi,
@@ -1037,7 +1035,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private generateSingleTestCase(test: ReportData["tests"][0]): string {
-    // ... this method remains the same ...
     const fullTitlePath = test.fullTitle.split(" > ");
     const testTitle = fullTitlePath.slice(1).join(" > ");
     let badgeClass: string = test.status;
@@ -1099,7 +1096,6 @@ class MyCustomReporter implements Reporter {
     attachments: ReportData["tests"][0]["attachments"],
     isTrace: boolean = false
   ): string {
-    // ... this method remains the same ...
     return `<div class="test-detail-section"><h4>${title}</h4><div class="attachments-section"><div class="attachments-grid">${attachments
       .map(
         (attachment) =>
@@ -1121,7 +1117,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private generateStepList(steps: ReportData["tests"][0]["steps"]): string {
-    // ... this method remains the same ...
     return steps
       .map(
         (step) =>
@@ -1155,7 +1150,6 @@ class MyCustomReporter implements Reporter {
   }
 
   private escapeHtml(text: string): string {
-    // ... this method remains the same ...
     return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
